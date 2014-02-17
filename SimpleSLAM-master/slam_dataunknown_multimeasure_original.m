@@ -69,16 +69,16 @@ num_particles = 50;
 for i = 1:num_particles
   particles(i).w = 1.0/num_particles;
   particles(i).position = real_position;
-   for lIdx=1:size(real_landmarks,2)
-%     particles(i).landmarks(lIdx).seen = false;
-%     particles(i).landmarks(lIdx).E=zeros(3,3);
+  for lIdx=1:size(real_landmarks,2)
+    particles(i).landmarks(lIdx).seen = false;
+    particles(i).landmarks(lIdx).E=zeros(3,3);
     particles(i).num_landmarks(1)=0;
-     particles(i).lm_weight=1.0/num_particles;
-   end
+    particles(i).lm_weight=1.0/num_particles;
+  end
 end
 
 pos_history = [];
-default_importance=0.01; 
+default_importance=0.05; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -120,28 +120,18 @@ for timestep = 2:timesteps
     G(:,:,to_delete)=[];
     
 
-
-  if isempty(z_real)==0
-      doResample=true; %if there is not new measurement, skip to the next timestep
-  end    
-    
-    
+        
       for pIdx = 1:num_particles
                
-%           
-%           if isempty(z_real)==1
-%               continue; %if there is not new measurement, skip to the next timestep
-%           end
           
-          particles(pIdx).lm_weight=[];
           for j=1:particles(pIdx).num_landmarks(timestep-1)
                 
               [z_p(:,j), H(:,:,j)] = getMeasurement(particles(pIdx).position, particles(pIdx).landmarks(j).pos, [0;0]);
               for measured_lm=1:size(z_real,2) 
               residual = z_real(:,measured_lm) - z_p(:,j);
 
-              Q(:,:,j) = H(:,:,j)' * particles(pIdx).landmarks(j).E * H(:,:,j) + R;
-              particles(pIdx).lm_weight(measured_lm,j) = particles(pIdx).w * norm(2*pi*Q(:,:,j)).^(-1/2)*exp(-1/2*(residual)'*inv(Q(:,:,j))*(residual));
+              Q(:,:,j,measured_lm) = G(:,:,measured_lm)' * particles(pIdx).landmarks(j).E * G(:,:,measured_lm) + R;
+              particles(pIdx).lm_weight(measured_lm,j) = particles(pIdx).landmarks(j).w * norm(2*pi*Q(:,:,j,measured_lm)).^(-1/2)*exp(-1/2*(residual)'*inv(Q(:,:,j,measured_lm))*(residual));
               end
           end
           
@@ -150,25 +140,15 @@ for timestep = 2:timesteps
           particles(pIdx).num_landmarks(timestep)=particles(pIdx).num_landmarks(timestep-1);
 
 %           clear c_hat
-            clear cost_table
-            
-           cost_table(1:size(z_real,2),1:particles(pIdx).num_landmarks(timestep-1))=particles(pIdx).lm_weight;
-           cost_table(1:size(z_real,2),particles(pIdx).num_landmarks(timestep-1)+1 ...
-                        :particles(pIdx).num_landmarks(timestep-1)+size(z_real,2)) ...
-                            =default_importance*eye(size(z_real,2));
-          particles(pIdx).w=max(max(cost_table));
           data_associate_mat=zeros(size(z_real,2),particles(pIdx).num_landmarks(timestep));
           for measured_lm=1:size(z_real,2)
-              [val IDX] = max(cost_table(measured_lm,:));
-              if IDX > particles(pIdx).num_landmarks(timestep-1)
-                  %we haven't seen this landmark before
+              if max(particles(pIdx).lm_weight(measured_lm,:)) < default_importance
                   particles(pIdx).num_landmarks(timestep)=particles(pIdx).num_landmarks(timestep)+1; %add new landmark
                   data_associate_mat(measured_lm,particles(pIdx).num_landmarks(timestep))=measured_lm; %set correspondance b/t measurement and feature j
                   
               else
-                  %we've already seen this landmark
-%                   [val idx]=max(particles(pIdx).lm_weight(measured_lm,:));
-                  data_associate_mat(measured_lm,IDX)=measured_lm; %measurement is a known feature
+                  [val idx]=max(particles(pIdx).lm_weight(measured_lm,:));
+                  data_associate_mat(measured_lm,idx)=measured_lm; %measurement is a known feature
                   
               end
                             
@@ -178,16 +158,16 @@ for timestep = 2:timesteps
        continue; %if there is not new measurement, skip to the next timestep 
     end
           
-%            for j=1:particles(pIdx).num_landmarks(timestep)
-%               if data_associate_vect(j)>0
-%                   if j>particles(pIdx).num_landmarks(timestep-1)
-%                       particles(pIdx).landmarks(j).w=default_importance;
-%                   else
-%                   %update weight of landmark
-%                particles(pIdx).landmarks(j).w =  particles(pIdx).lm_weight(data_associate_vect(j),j);
-%                   end
-%               end
-%            end
+           for j=1:particles(pIdx).num_landmarks(timestep)
+              if data_associate_vect(j)>0
+                  if j>particles(pIdx).num_landmarks(timestep-1)
+                      particles(pIdx).landmarks(j).w=default_importance;
+                  else
+                  %update weight of landmark
+               particles(pIdx).landmarks(j).w =  particles(pIdx).lm_weight(data_associate_vect(j),j);
+                  end
+              end
+           end
 
           
 %           [particles(pIdx).w c_hat] = max(particles(pIdx).lm_weight); %max likelihood and index of ML feature
@@ -210,13 +190,13 @@ for timestep = 2:timesteps
                   
               elseif (data_associate_vect(j)>0 && j<=particles(pIdx).num_landmarks(timestep-1))
                                                    
-                  K = particles(pIdx).landmarks(j).E * H(:,:,j) * inv(Q(:,:,j));
+                  K = particles(pIdx).landmarks(j).E * G(:,:,data_associate_vect(j)) * inv(Q(:,:,j,data_associate_vect(j)));
                   % Mix the ideal reading, and our actual reading using the Kalman gain, and use the result
                   % to predict a new landmark position
                   particles(pIdx).landmarks(j).pos = particles(pIdx).landmarks(j).pos + K*(z_real(:,data_associate_vect(j))-z_p(:,j));
                   
                   % Update the covariance of this landmark
-                  particles(pIdx).landmarks(j).E = (eye(size(H(:,:,j))) - K*H(:,:,j)')*particles(pIdx).landmarks(j).E;
+                  particles(pIdx).landmarks(j).E = (eye(size(K)) - K*G(:,:,data_associate_vect(j))')*particles(pIdx).landmarks(j).E;
                   particles(pIdx).landmarks(j).counter=particles(pIdx).landmarks(j).counter+1; %increment counter
                   
               else
@@ -262,10 +242,8 @@ for timestep = 2:timesteps
       end %pIdx
     
     
-%         particles = resample_lm(particles);
-            if doResample==true
-                particles = resample(particles);
-            end
+        particles = resample_lm(particles);
+        
    %distance
 
 
