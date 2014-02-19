@@ -26,7 +26,8 @@ timesteps = 200;
 
 % The maximum distance from which our sensor can sense a landmark
 max_read_distance = 2;
-
+min_read_angle = 45*pi/180; %radians- maximum read angle
+max_read_angle = 135*pi/180;
 % The actual positions of the landmarks (each column is a separate landmark)
 real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x
                   3.0,  2.5   3.4, 1.5, 4.5;     % y
@@ -37,13 +38,13 @@ real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x
 %                   0.0,  0.0   0.0];   
 
 % The initial starting position of the robot
-real_position = [0.0;      % x
+real_position = [0.8;      % x
                  -1.0;     % y
-                 pi/3.0];  % rotation
+                 pi/2.0];  % rotation
 
 % The movement command given tot he robot at each timestep                 
 movement_command = [.05;     % Distance
-                    .01];    % Rotation
+                    0];    % Rotation
                     
 % The Gaussian variance of the movement commands
 movement_variance = [.1;   % Distance
@@ -79,7 +80,7 @@ end
 
 pos_history = [];
 default_importance=0.001; 
-NEFFECTIVE= 0.5*num_particles;
+% NEFFECTIVE= 0.5*num_particles;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -113,17 +114,25 @@ for timestep = 2:timesteps
     read_distance(lIdx) = z_real(1,lIdx);
     read_angle(lIdx)    = z_real(2,lIdx);
 
-     to_delete=find(read_distance> max_read_distance);
   end
-    z_real(:,to_delete)=[];
-    read_angle(to_delete)=[];
-    read_distance(to_delete)=[];
-    G(:,:,to_delete)=[];
+    %delete any features that are out of our perceptual range/angle
+    to_keep=find(min_read_angle < read_angle & read_angle < max_read_angle & read_distance < max_read_distance);
+%     to_delete_dist=find(read_distance> max_read_distance);
+
+
+    z_real=z_real(:,to_keep);
+    read_angle=read_angle(to_keep);
+    read_distance=read_distance(to_keep);
+    G=G(:,:,to_keep);
     
 
 
   if isempty(z_real)==0
       doResample=true; %if there is not new measurement, skip to the next timestep
+%   else
+%       timestep
+%       particles(pIdx).num_landmarks(timestep)=particles(pIdx).num_landmarks(timestep-1);
+%       continue;
   end    
     
     
@@ -142,23 +151,29 @@ for timestep = 2:timesteps
               residual = z_real(:,measured_lm) - z_p(:,j);
 
               Q(:,:,j) = H(:,:,j)' * particles(pIdx).landmarks(j).E * H(:,:,j) + R;
+              
+              
               particles(pIdx).lm_weight(measured_lm,j) = particles(pIdx).w * norm(2*pi*Q(:,:,j)).^(-1/2)*exp(-1/2*(residual)'*inv(Q(:,:,j))*(residual));
               end
           end
           %probably going to delete this hold on for now
-%           particles(pIdx).lm_weight(particles(pIdx).num_landmarks(timestep-1)+1) = 0.09; %importance factor, new feature
+          %           particles(pIdx).lm_weight(particles(pIdx).num_landmarks(timestep-1)+1) = 0.09; %importance factor, new feature
           particles(pIdx).num_landmarks(timestep)=particles(pIdx).num_landmarks(timestep-1);
-                                disp(particles(pIdx).w)
-%           clear c_hat
-            clear cost_table
-            
-           cost_table(1:size(z_real,2),1:particles(pIdx).num_landmarks(timestep-1))=particles(pIdx).lm_weight;
-           cost_table(1:size(z_real,2),particles(pIdx).num_landmarks(timestep-1)+1 ...
-                        :particles(pIdx).num_landmarks(timestep-1)+size(z_real,2)) ...
-                            =default_importance*eye(size(z_real,2));
+          %           clear c_hat
+          
+          if isempty(z_real)==1
+              continue; %if there is not new measurement, skip to the next timestep
+          end
+          
+          
+          clear cost_table
+          
+          cost_table(1:size(z_real,2),1:particles(pIdx).num_landmarks(timestep-1))=particles(pIdx).lm_weight;
+          cost_table(1:size(z_real,2),particles(pIdx).num_landmarks(timestep-1)+1 ...
+              :particles(pIdx).num_landmarks(timestep-1)+size(z_real,2)) ...
+              =default_importance*eye(size(z_real,2));
           particles(pIdx).w=max(max(cost_table));
-
-
+          
           data_associate_mat=zeros(size(z_real,2),particles(pIdx).num_landmarks(timestep));
           for measured_lm=1:size(z_real,2)
               [val IDX] = max(cost_table(measured_lm,:));
@@ -176,9 +191,7 @@ for timestep = 2:timesteps
                             
           end
           data_associate_vect=max(data_associate_mat,[],1); %vector that contains measurement correspondance to landmarks
-    if isempty(data_associate_vect)==1
-       continue; %if there is not new measurement, skip to the next timestep 
-    end
+
           
 %            for j=1:particles(pIdx).num_landmarks(timestep)
 %               if data_associate_vect(j)>0
@@ -229,7 +242,9 @@ for timestep = 2:timesteps
 %                   particles(pIdx).landmarks(j).E=particles(pIdx).landmarks(j).E;
                     
                     dist_to_landmark=norm([particles(pIdx).landmarks(j).pos(1)-particles(pIdx).position(1) particles(pIdx).landmarks(j).pos(2)-particles(pIdx).position(2)]);
-                    if dist_to_landmark > max_read_distance
+                    ang_to_landmark=atan2((particles(pIdx).landmarks(j).pos(2) - particles(pIdx).position(2)),...
+                                (particles(pIdx).landmarks(j).pos(1) - particles(pIdx).position(1)));
+                    if (dist_to_landmark > max_read_distance || ang_to_landmark > max_read_angle || ang_to_landmark < min_read_angle)
                             %counter(pIdx,j)=counter(pIdx,j) %don't change counter
                     else
                   particles(pIdx).landmarks(j).counter=particles(pIdx).landmarks(j).counter-1; %decrement counter                    
@@ -270,6 +285,7 @@ for timestep = 2:timesteps
 %                particles= resample_particles(particles, NEFFECTIVE, doResample);            
 
             end
+            
    %distance
 
 
