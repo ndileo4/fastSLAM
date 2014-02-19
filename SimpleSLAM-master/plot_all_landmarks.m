@@ -27,8 +27,8 @@ for i=1:length(particles)
       elseif lIdx==8
           plot(particles(i).landmarks(lIdx).pos(1),particles(i).landmarks(lIdx).pos(2),'g.')
           
-          
-      
+      else    
+          plot(particles(i).landmarks(lIdx).pos(1),particles(i).landmarks(lIdx).pos(2),'b.')
       
       
       end
@@ -37,5 +37,6 @@ for i=1:length(particles)
     
 end
 
+plot(real_landmarks(1,:),real_landmarks(2,:),'b*')
 
 

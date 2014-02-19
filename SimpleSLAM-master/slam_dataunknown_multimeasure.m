@@ -29,7 +29,7 @@ max_read_distance = 2;
 
 % The actual positions of the landmarks (each column is a separate landmark)
 real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x
-                  3.0,  2.5   3.4, 1.5, 3.5;     % y
+                  3.0,  2.5   3.4, 1.5, 4.5;     % y
                   0.0,  0.0   0.0, 0.0, 0.0];    % Nothing
 
 % real_landmarks = [1.0,  2.0,  0.0;
@@ -78,7 +78,8 @@ for i = 1:num_particles
 end
 
 pos_history = [];
-default_importance=0.01; 
+default_importance=0.001; 
+NEFFECTIVE= 0.5*num_particles;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -144,11 +145,10 @@ for timestep = 2:timesteps
               particles(pIdx).lm_weight(measured_lm,j) = particles(pIdx).w * norm(2*pi*Q(:,:,j)).^(-1/2)*exp(-1/2*(residual)'*inv(Q(:,:,j))*(residual));
               end
           end
-          
           %probably going to delete this hold on for now
 %           particles(pIdx).lm_weight(particles(pIdx).num_landmarks(timestep-1)+1) = 0.09; %importance factor, new feature
           particles(pIdx).num_landmarks(timestep)=particles(pIdx).num_landmarks(timestep-1);
-
+                                disp(particles(pIdx).w)
 %           clear c_hat
             clear cost_table
             
@@ -157,6 +157,8 @@ for timestep = 2:timesteps
                         :particles(pIdx).num_landmarks(timestep-1)+size(z_real,2)) ...
                             =default_importance*eye(size(z_real,2));
           particles(pIdx).w=max(max(cost_table));
+
+
           data_associate_mat=zeros(size(z_real,2),particles(pIdx).num_landmarks(timestep));
           for measured_lm=1:size(z_real,2)
               [val IDX] = max(cost_table(measured_lm,:));
@@ -262,9 +264,11 @@ for timestep = 2:timesteps
       end %pIdx
     
     
-%         particles = resample_lm(particles);
+% 
             if doResample==true
-                particles = resample(particles);
+                 particles = resample(particles);               
+%                particles= resample_particles(particles, NEFFECTIVE, doResample);            
+
             end
    %distance
 
