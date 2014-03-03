@@ -1,5 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Copyright 2010 Randolph Voorhies
+%  Edited 2014 Nick DiLeo - Modifications for unknown data association 
+%  and multiple measurements in a single timestep
+
 %  This program is free software: you can redistribute it and/or modify
 %  it under the terms of the GNU General Public License as published by
 %  the Free Software Foundation, either version 3 of the License, or
@@ -40,11 +43,11 @@ real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x
 % The initial starting position of the robot
 real_position = [0.8;      % x
                  -1.0;     % y
-                 pi/2.0];  % rotation
+                 pi/3.0];  % rotation
 
 % The movement command given tot he robot at each timestep                 
 movement_command = [.05;     % Distance
-                    0];    % Rotation
+                    0.01];    % Rotation
                     
 % The Gaussian variance of the movement commands
 movement_variance = [.1;   % Distance
