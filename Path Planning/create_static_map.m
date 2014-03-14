@@ -3,7 +3,8 @@
 % position and final destination.  The size of the field is taken from the
 % RobotX rules.  The environment is said to be 40m wide and a maximum of
 % 100m long
-
+clear all;
+close all;
 %Input start gate 1,2, or 3
 start_gate = 1;
 
@@ -49,7 +50,8 @@ plot(gate_buoys(1,1:2),gate_buoys(2,1:2),'r*'); %plot red buoy gates
 plot(gate_buoys(1,3:7),gate_buoys(2,3:7),'w*'); %plot white buoy gates
 plot(gate_buoys(1,8:9),gate_buoys(2,8:9),'g*'); %plot green buoy gates
 plot(robot_position(1),robot_position(2),'Marker','*','MarkerFaceColor',[1 0.502 0]); %plot robot's position
-axis([0, 40, -10, 110]);
 xlabel('x (meters)');ylabel('y (meters)');
+axis equal
+axis([0, 40, -10, 110]);
 set(gca,'Color',[0.4 0.698 1])       
           

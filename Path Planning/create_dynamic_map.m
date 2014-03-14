@@ -4,6 +4,7 @@
 % RobotX rules.  The environment is said to be 40m wide and a maximum of
 % 100m long
 clear all
+close all 
 
 total_timesteps = 200; %set arbitrarily right now. Used as a limit in simulation for loop
 movement_variance = [0;0]; %Zero noise velocity and rotation commands
@@ -54,7 +55,7 @@ seen_idx = double.empty(1,0); %creat empty vector
 for timestep=1:total_timesteps
     
     %you can update the movement_command at each iteration
-    movement_command = [0.5;0.0001]; % [velocity command;yaw command] 
+    movement_command = [0.5;0.001]; % [velocity command;yaw command] 
     robot_position = updateMovement(robot_position, movement_command, movement_variance);
     
     new_measurement = getMeasurement(robot_position, real_obstacles);
@@ -82,12 +83,25 @@ for timestep=1:total_timesteps
     plot(gate_buoys(1,3:7),gate_buoys(2,3:7),'w*'); %plot white buoy gates
     plot(gate_buoys(1,8:9),gate_buoys(2,8:9),'g*'); %plot green buoy gates
     plot(robot_position(1),robot_position(2),'Marker','*','MarkerFaceColor',[1 0.502 0]); %plot robot's position
-    axis([0, 40, -10, 110]);
+    
     xlabel('x (meters)');ylabel('y (meters)');
+    axis equal
+    axis([0, 40, -10, 110]);
     set(gca,'Color',[0.4 0.698 1]) 
     hold off
 
-    pause(0.1)
+       %write to a .gif
+% %       frame = getframe(1);
+% %       im = frame2im(frame);
+% %       [imind,cm] = rgb2ind(im,256);
+% %       if timestep == 1;
+% %           imwrite(imind,cm,'testgif.gif','gif', 'Loopcount',inf);
+% %       else
+% %           imwrite(imind,cm,'testgif.gif','gif','WriteMode','append');
+% %       end    
+% %     
+    
+    pause(0.03)
     
 end
 
