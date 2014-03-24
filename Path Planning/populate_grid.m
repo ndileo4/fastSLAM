@@ -50,10 +50,23 @@ world_model = zeros(length(mid_points_y),length(mid_points_x));
        tmp = abs(mid_points_y-obstacles(2,i));
        [dummy idx2] = min(tmp);  %index of the closest value
 
-       %using a try here since we don't want to go out of the world_model index
-       world_model(idx2-amt_to_pad:idx2+amt_to_pad,...
-                    idx1-amt_to_pad:idx1+amt_to_pad)=0.8;
-
+       %create the indices that we want to pad
+       y_vector_pad=[idx2-amt_to_pad:idx2+amt_to_pad];
+       x_vector_pad=[idx1-amt_to_pad:idx1+amt_to_pad];
+       
+       %We want to ensure that we don't access an invalid index
+       %Right now we check if any padding is outside of acceptable range.
+       %If it is, we just don't pad that landmark.  There is probably a
+       %nicer way to do this (e.g. check how many cells you can pad without
+       %going out of bounds).
+       check_y= y_vector_pad>size(world_model,1) | y_vector_pad<=0;
+       check_x= x_vector_pad>size(world_model,2) | x_vector_pad<=0;
+       
+       if any(check_y)==0 && any(check_x)==0
+       world_model(y_vector_pad,...
+                    x_vector_pad)=0.8;
+       end
+       
        world_model(idx2,idx1)=1;
        
        end
