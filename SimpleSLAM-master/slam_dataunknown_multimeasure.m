@@ -25,10 +25,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all
 % The number of timesteps for the simulation
-timesteps = 200;
+timesteps = 500;
 
 % The maximum distance from which our sensor can sense a landmark
-max_read_distance = 2;
+max_read_distance = 6;
 min_read_angle = 45*pi/180; %radians- maximum read angle
 max_read_angle = 135*pi/180;
 % The actual positions of the landmarks (each column is a separate landmark)
@@ -36,22 +36,24 @@ real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x
                   3.0,  2.5   3.4, 1.5, 4.5;     % y
                   0.0,  0.0   0.0, 0.0, 0.0];    % Nothing
 
-% real_landmarks = [1.0,  2.0,  0.0;
-%                   1.5,  2.5   3.5;
-%                   0.0,  0.0   0.0];   
 
 % The initial starting position of the robot
 real_position = [0.8;      % x
                  -1.0;     % y
                  pi/3.0];  % rotation
+             
+cd ../Path' Planning'/
+[real_position desired_end real_landmarks] = create_static_map(2,'X');
+cd ../SimpleSLAM-master/
+real_position(3)=pi/2;
 
 % The movement command given tot he robot at each timestep                 
-movement_command = [.05;     % Distance
-                    0.01];    % Rotation
+movement_command = [.4;     % Distance
+                    0.0];    % Rotation
                     
 % The Gaussian variance of the movement commands
 movement_variance = [.1;   % Distance
-                     .05]; % Rotation
+                     .02]; % Rotation
 M = [movement_variance(1), 0.0;
      0.0, movement_variance(2)];
 
@@ -355,7 +357,7 @@ for timestep = 2:timesteps
 %         end
   end
 
-  axis([-5, 5, -4, 7]);
+  axis([0, 40, -10, 120]);
   pause(.01);
 end
 

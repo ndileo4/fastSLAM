@@ -33,6 +33,10 @@ max_world_y = 120; %meters
 
 % cell_resolution = 2.5; %meters - currently same resolution in x and y
 
+%specifies the amount of cells around every obstacle that we should pad
+amt_to_pad=ceil(obstacle_padding/cell_resolution);
+
+
 % These will be the points for each cell in our "world_model"
 mid_points_x = [min_world_x:cell_resolution:max_world_x];
 mid_points_y = [max_world_y:-cell_resolution:min_world_y]; %since indexing runs from smallest to largest
@@ -45,9 +49,13 @@ world_model = zeros(length(mid_points_y),length(mid_points_x));
        [dummy idx1] = min(tmp);  %index of the closest value
        tmp = abs(mid_points_y-obstacles(2,i));
        [dummy idx2] = min(tmp);  %index of the closest value
-   
-       world_model(idx2,idx1)=1;
 
+       %using a try here since we don't want to go out of the world_model index
+       world_model(idx2-amt_to_pad:idx2+amt_to_pad,...
+                    idx1-amt_to_pad:idx1+amt_to_pad)=0.8;
+
+       world_model(idx2,idx1)=1;
+       
        end
 %    end
 %     

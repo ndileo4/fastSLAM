@@ -6,8 +6,8 @@ close all
 
 start_gate = 1; %start gate 1,2, or 3
 end_gate = 'Z'; %desired end gate - X,Y,Z
-cell_resolution = 2.5;
-obstacle_padding = 0;
+cell_resolution = 2.0;
+obstacle_padding = 1;
 
 [start_pos desired_end obstacles] = create_static_map(start_gate,end_gate);
 [world_model,mid_points_x, mid_points_y] = populate_grid(obstacles,cell_resolution,obstacle_padding);
@@ -42,6 +42,9 @@ x_add = [0 cell_resolution cell_resolution cell_resolution...
 y_add = [cell_resolution cell_resolution 0 -cell_resolution ...
                 -cell_resolution -cell_resolution 0 cell_resolution];
 
+ dynamic_points = [1 5 1 5 1 5 1 5];   
+% dynamic_points = [1 1 1 1 1 1 1 1]; 
+            
 open_list=cell(1,1); %initialize open_list as a cell structure
 open_list{1,1}(1,1)=-1; %parent x
 open_list{1,1}(2,1) = -1; %parent y
@@ -80,7 +83,7 @@ while isempty(open_list) == 0
         end
 
         
-        %check to see if successor is an obstacle:
+        %check to see if successor is an obstacle or obstacle padding:
         %if it is, make the g score HUGE...if not assign g-score
                
        tmp = abs(mid_points_x-successors{i,1}(3));
@@ -95,7 +98,7 @@ while isempty(open_list) == 0
         %note that we have to reverse y (row) indexing b/c our y axis
         %goes up and the matlab indexing scheme goes from top to bottom
 %         if obstacles(size(obstacles,1)-successors{i,1}(4)/cell_resolution,successors{i,1}(3)/cell_resolution+1) == 1
-         if obstacles(idx2,idx1) == 1
+         if obstacles(idx2,idx1) == 1 || obstacles(idx2,idx1) == 0.8
 
             successors{i,1}(5) = q(5) + 1000000; % arbitrarily large number
           else
@@ -104,7 +107,7 @@ while isempty(open_list) == 0
             %this is where you can put more weight on kinematically
             %infeasible motions - the sqrt was removed - shaved several
             %seconds off
-            successors{i,1}(5) = q(5) + 5*((q(3)-successors{i,1}(3))^2 ...
+            successors{i,1}(5) = q(5) + dynamic_points(i)*((q(3)-successors{i,1}(3))^2 ...
                                             +(q(4)-successors{i,1}(4))^2);
                 
         end
@@ -210,9 +213,9 @@ end
 
 %PLOTTING
 figure(1)
-hold on
-plot(final_path(:,1),final_path(:,2),'r-')
-hold off
+% hold on
+% plot(final_path(:,1),final_path(:,2),'r-')
+% hold off
 
 %  pcolor(obstacles);figure(gcf);
 %  hold on
@@ -265,3 +268,13 @@ final_result =start_pos_plot+end_pos_plot+path_pos_plot+obstacles;
 pcolor(final_result)
 set(gca,'YDir','reverse');
 % view(2);
+
+final_path=flipud(final_path); %flip so we start from beginning
+final_path(end+1,:)=desired_end(1:2)';
+%create spline
+t=[0:length(final_path)-1];
+ts=[0:0.25:length(final_path)-1];
+the_spline=spline(t,final_path',ts);
+figure(1)
+hold on
+plot(the_spline(1,:),the_spline(2,:),'g-')
