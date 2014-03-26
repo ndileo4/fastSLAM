@@ -1,31 +1,29 @@
+%function [robot_position end_position gates_and_obstacles] = create_dynamic_map(start_gate,end_gate) 
+%OUTPUT
+% robot_pos = current position of the robot
+% end_pos = desired end position of the robot
+% gates_and_obstacles = one variable to contain the x,y location of all 
+%                       obstacles and buoys
+    
+%INFO
 % Script to create a dynamic map of a robotic environment.  You must supply
 % a starting and ending "gate" to give the robot an initial starting
 % position and final destination.  The size of the field is taken from the
 % RobotX rules.  The environment is said to be 40m wide and a maximum of
-% 100m long
+% 100m long 
+close all
 clear all
-close all 
-
-total_timesteps = 200; %set arbitrarily right now. Used as a limit in simulation for loop
-movement_variance = [0;0]; %Zero noise velocity and rotation commands
-max_read_angle = 45*pi/180; %max viewing angle
-min_read_angle = -max_read_angle;
-max_read_distance = 7; %3 meters max viewing distance
-
 
 %Input start gate 1,2, or 3
 start_gate = 1;
 
 %Input end gate X,Y, or Z
-end_gate = 'X';
+end_gate = 'Z';
 
-%These are really only used for plotting purposes
-gate_buoys = [5  5  15  15  25  25   25 35  35;
-              0 100 0  100   0  100  0  0 100];
-          
-real_obstacles = [7.1429   14.9770   24.4700   30.6452   22.5346   12.1198    8.8940  18.1106   29.5392   36.6359   29.4470   18.0184    6.0369   13.3180 26.8664   18.7558   27.3272   13.4101;
-   14.7368   15.0877   17.1930   27.3684   40.0000   44.2105   62.8070   63.1579   63.8596   74.3860   80.0000   83.1579   74.3860   41.0526  17.1930   24.9123   55.0877   56.4912];
-          
+%load config paramters into workspace
+config();
+
+
 % Decide our start gate - robot initial position
 switch start_gate
     case 1
@@ -41,23 +39,47 @@ end
 % Decide our end gate - desired final position
 switch end_gate
     case 'X'
-        end_position = [10;100;0]; % set initial x,y,yaw
+        desired_end = [10;100;0]; % set initial x,y,yaw
     case 'Y'
-        end_position = [20;100;0]; 
+        desired_end = [20;100;0]; 
     case 'Z'
-        end_position = [30;100;0];
+        desired_end = [30;100;0];
     otherwise
         error('Invalid End Gate');
 end
 
-seen_idx = double.empty(1,0); %creat empty vector
-%simulation
-for timestep=1:total_timesteps
+
+%% SIMULATION
+seen_idx = double.empty(1,0); %create empty vector
+dist_to_end = (robot_position(1)-desired_end(1))^2+(robot_position(2)+desired_end(2))^2;
+obstacles=double.empty(2,0);
+%keep going with simulation until we get close to goal
+while dist_to_end> min_dist2wp^2
     
+    %Solve A-Star path plan if there is a new obstacle 
+    %TODO: Ensure A-Star accounts for current vehicle heading
+    if new_obstacle == 1
+    [path_spline] = return_astar_plan(robot_position,...
+                        desired_end,obstacles,cell_resolution,obstacle_padding);
+                    
+    waypoint_index=1; %reset the waypoint index b/c we have a new path
+    
+    end                
+   
+    %to find out the movement commands that we need to take
+    [yaw_command,waypoint_index]= compute_steering(robot_position, path_spline,...
+                        waypoint_index, min_dist2wp, robot_position(3), max_steering_rate,...
+                        max_steering_angle, timestep);                
+    if waypoint_index==0
+        break; %reached our last point
+    end
+                    
+                    
     %you can update the movement_command at each iteration
-    movement_command = [0.5;0.001]; % [velocity command;yaw command] 
+    movement_command = [0.1;yaw_command]; % [velocity command;yaw command] 
     robot_position = updateMovement(robot_position, movement_command, movement_variance);
     
+    %Find out which obstacle we can see from our current position
     new_measurement = getMeasurement(robot_position, real_obstacles);
     read_distance = new_measurement(1,:);
     read_angle = new_measurement(2,:);
@@ -73,8 +95,21 @@ for timestep=1:total_timesteps
         
     end
     
+    last_obstacles=obstacles;
     obstacles = real_obstacles(:,seen_idx); %select obstacles that we know about
+    change_obstacles=size(obstacles,2)-size(last_obstacles,2);
     
+    if change_obstacles == 0 || isempty(obstacles)
+       new_obstacle =0; %there are no new obstacles, we won't replan 
+    else
+       new_obstacle =1; %there's a new obstacles, let's replan! 
+    end
+    
+    
+    dist_to_end = (robot_position(1)-desired_end(1))^2+...
+                    (robot_position(2)+desired_end(2))^2;
+    
+    robot_history(:,end+1)=robot_position;
     clf;
     %PLOTTING          
     hold on          
@@ -83,6 +118,9 @@ for timestep=1:total_timesteps
     plot(gate_buoys(1,3:7),gate_buoys(2,3:7),'w*'); %plot white buoy gates
     plot(gate_buoys(1,8:9),gate_buoys(2,8:9),'g*'); %plot green buoy gates
     plot(robot_position(1),robot_position(2),'Marker','*','MarkerFaceColor',[1 0.502 0]); %plot robot's position
+    plot(path_spline(1,:),path_spline(2,:),'r-')
+    plot(robot_history(1,:),robot_history(2,:),'g-')
+    
     
     xlabel('x (meters)');ylabel('y (meters)');
     axis equal

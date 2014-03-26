@@ -43,8 +43,11 @@ mid_points_y = [max_world_y:-cell_resolution:min_world_y]; %since indexing runs 
 
 world_model = zeros(length(mid_points_y),length(mid_points_x));
 
+if isempty(obstacles)
+    return; %just send back an empty grid if no obstacles
+end
        
-       for i = 1:length(obstacles)
+       for i = 1:size(obstacles,2)
        tmp = abs(mid_points_x-obstacles(1,i));
        [dummy idx1] = min(tmp);  %index of the closest value
        tmp = abs(mid_points_y-obstacles(2,i));

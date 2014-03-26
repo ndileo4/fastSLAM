@@ -1,15 +1,15 @@
+function [path_spline] = return_astar_plan(robot_position,desired_end,obstacles,cell_resolution,obstacle_padding)
 % Simple test to attempt to get A star to work with one obstacle
 
 %Create a "grid" of obstacles. 0 for no obstacle. 1 fo obstacle
-clear all
-close all
 
-start_gate = 3; %start gate 1,2, or 3
-end_gate = 'Z'; %desired end gate - X,Y,Z
-cell_resolution = 1.0;
-obstacle_padding = 1.5;
 
-[start_pos desired_end obstacles] = create_static_map(start_gate,end_gate);
+% start_gate = 3; %start gate 1,2, or 3
+% end_gate = 'Z'; %desired end gate - X,Y,Z
+% cell_resolution = 1.0;
+% obstacle_padding = 1.5;
+
+% [start_pos desired_end obstacles] = create_static_map(start_gate,end_gate);
 [world_model,mid_points_x, mid_points_y] = populate_grid(obstacles,cell_resolution,obstacle_padding);
 
 % start_pos = [2,4]; %start position x,y
@@ -44,12 +44,18 @@ y_add = [cell_resolution cell_resolution 0 -cell_resolution ...
 
  dynamic_points = [1 5 1 5 1 5 1 5];   
 % dynamic_points = [1 1 1 1 1 1 1 1]; 
-            
+
+%Put our initial point onto the middle of a grid
+tmp = abs(mid_points_x-robot_position(1));
+[~, idx1] = min(tmp);  %index of the closest value
+tmp = abs(mid_points_y-robot_position(2));
+[~, idx2] = min(tmp);  %index of the closest value
+
 open_list=cell(1,1); %initialize open_list as a cell structure
 open_list{1,1}(1,1)=-1; %parent x
 open_list{1,1}(2,1) = -1; %parent y
-open_list{1,1}(3,1) = start_pos(1); %set intial x node in open list
-open_list{1,1}(4,1) = start_pos(2); %set y position
+open_list{1,1}(3,1) = mid_points_x(idx1); %set intial x node in open list
+open_list{1,1}(4,1) = mid_points_y(idx2); %set y position
 open_list{1,1}(5,1) = 0; %g
 open_list{1,1}(6,1) = 0;  %h
 open_list{1,1}(7,1) = open_list{1,1}(5,1)+open_list{1,1}(6,1); %f score
@@ -58,6 +64,7 @@ closed_list = cell(0,1); %creat empty closed list
 
 extract = @(C, k) cellfun(@(c)c(k), C) ; %function to extract element out of cell
 solution_found = 0; %initialize our solution found flag
+
 
 tic
 while isempty(open_list) == 0
@@ -211,70 +218,73 @@ end
 
 
 
-%PLOTTING
-figure(1)
-% hold on
-% plot(final_path(:,1),final_path(:,2),'r-')
-% hold off
+% % %PLOTTING
+% % figure(1)
+% % % hold on
+% % % plot(final_path(:,1),final_path(:,2),'r-')
+% % % hold off
+% % 
+% % %  pcolor(obstacles);figure(gcf);
+% % %  hold on
+% % %  pcolor(start_pos(1),start_pos(2),1)
+% % 
+% % start_pos_plot = zeros(size(obstacles));
+% % tmp = abs(mid_points_x-start_pos(1));
+% % [dummy idx1] = min(tmp);  %index of the closest value
+% % tmp = abs(mid_points_y-start_pos(2));
+% % [dummy idx2] = min(tmp);  %index of the closest value
+% % start_pos_plot(idx2,idx1)=0.4;
+% % % start_pos_plot=padarray(start_pos_plot,[1 1],'pre');
+% % 
+% % end_pos_plot = zeros(size(obstacles));
+% % start_pos_plot = zeros(size(obstacles));
+% % tmp = abs(mid_points_x-desired_end(1));
+% % [dummy idx1] = min(tmp);  %index of the closest value
+% % tmp = abs(mid_points_y-desired_end(2));
+% % [dummy idx2] = min(tmp);  %index of the closest value
+% % end_pos_plot(idx2,idx1)=0.8;
+% % % end_pos_plot=padarray(end_pos_plot,[1 1],'pre');
+% % 
+% % path_pos_plot = zeros(size(obstacles));
+% % for i=1:length(final_path)
+% % start_pos_plot = zeros(size(obstacles));
+% % tmp = abs(mid_points_x-final_path(i,1));
+% % [dummy idx1] = min(tmp);  %index of the closest value
+% % tmp = abs(mid_points_y-final_path(i,2));
+% % [dummy idx2] = min(tmp);  %index of the closest value  
+% %     
+% % path_pos_plot(idx2,idx1)=0.3;
+% % end
+% % % path_pos_plot=padarray(path_pos_plot,[1 1],'pre');
+% % % 
+% % % obstacles_plot=padarray(obstacles,[1 0],'post');
+% % % obstacles_plot=padarray(obstacles_plot,[0 1],'post');
+% % 
+% % %close all
+% % % figure;
+% % % 
+% % % view(2);
+% % % hold on;
+% % % surf(start_pos_plot,'EdgeColor',[0 0 0]);
+% % % surf(end_pos_plot,'EdgeColor',[0 0 0]);
+% % % surf(path_pos_plot,'EdgeColor',[0 0 0]);
+% % % surf(obstacles_plot,'EdgeColor',[0 0 0]);
+% % figure()
+% % 
+% % final_result =start_pos_plot+end_pos_plot+path_pos_plot+obstacles;
+% % pcolor(final_result)
+% % set(gca,'YDir','reverse');
+% % % view(2);
 
-%  pcolor(obstacles);figure(gcf);
-%  hold on
-%  pcolor(start_pos(1),start_pos(2),1)
 
-start_pos_plot = zeros(size(obstacles));
-tmp = abs(mid_points_x-start_pos(1));
-[dummy idx1] = min(tmp);  %index of the closest value
-tmp = abs(mid_points_y-start_pos(2));
-[dummy idx2] = min(tmp);  %index of the closest value
-start_pos_plot(idx2,idx1)=0.4;
-% start_pos_plot=padarray(start_pos_plot,[1 1],'pre');
-
-end_pos_plot = zeros(size(obstacles));
-start_pos_plot = zeros(size(obstacles));
-tmp = abs(mid_points_x-desired_end(1));
-[dummy idx1] = min(tmp);  %index of the closest value
-tmp = abs(mid_points_y-desired_end(2));
-[dummy idx2] = min(tmp);  %index of the closest value
-end_pos_plot(idx2,idx1)=0.8;
-% end_pos_plot=padarray(end_pos_plot,[1 1],'pre');
-
-path_pos_plot = zeros(size(obstacles));
-for i=1:length(final_path)
-start_pos_plot = zeros(size(obstacles));
-tmp = abs(mid_points_x-final_path(i,1));
-[dummy idx1] = min(tmp);  %index of the closest value
-tmp = abs(mid_points_y-final_path(i,2));
-[dummy idx2] = min(tmp);  %index of the closest value  
-    
-path_pos_plot(idx2,idx1)=0.3;
-end
-% path_pos_plot=padarray(path_pos_plot,[1 1],'pre');
-% 
-% obstacles_plot=padarray(obstacles,[1 0],'post');
-% obstacles_plot=padarray(obstacles_plot,[0 1],'post');
-
-%close all
-% figure;
-% 
-% view(2);
-% hold on;
-% surf(start_pos_plot,'EdgeColor',[0 0 0]);
-% surf(end_pos_plot,'EdgeColor',[0 0 0]);
-% surf(path_pos_plot,'EdgeColor',[0 0 0]);
-% surf(obstacles_plot,'EdgeColor',[0 0 0]);
-figure()
-
-final_result =start_pos_plot+end_pos_plot+path_pos_plot+obstacles;
-pcolor(final_result)
-set(gca,'YDir','reverse');
-% view(2);
 
 final_path=flipud(final_path); %flip so we start from beginning
 final_path(end+1,:)=desired_end(1:2)';
 %create spline
 t=[0:length(final_path)-1];
 ts=[0:4:length(final_path)-1];
-the_spline=spline(t,final_path',ts);
-figure(1)
-hold on
-plot(the_spline(1,:),the_spline(2,:),'r-')
+path_spline=spline(t,final_path',ts);
+path_spline(1:2,end+1)=[desired_end(1);desired_end(2)];
+% % figure(1)
+% % hold on
+% % plot(path_spline(1,:),path_spline(2,:),'r-')
