@@ -2,7 +2,8 @@ Nick DiLeo
 Villanova University 2014
 
 INFO
-__________________________________________________
+========
+
 This group of scripts set out to simulate and solve the fastSLAM problem.
 This is a particle filter based approach of the general SLAM problem.
 
@@ -20,9 +21,8 @@ together.  Since each particle holds its own estimates about the number and
 location of landmarks, we must "cluster" together all landmark estimates to
 get one single map with landmark and robot pose estimates.
 
-
 USAGE
-___________________________________________________
+========
 Feel free to make any modifications to these scripts as necessary for your
 application.
 
