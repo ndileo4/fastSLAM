@@ -29,8 +29,8 @@ timesteps = 500;
 
 % The maximum distance from which our sensor can sense a landmark
 max_read_distance = 6;
-min_read_angle = 45*pi/180; %radians- maximum read angle
-max_read_angle = 135*pi/180;
+min_read_angle = -45*pi/180; %radians- maximum read angle
+max_read_angle = 45*pi/180;
 % The actual positions of the landmarks (each column is a separate landmark)
 real_landmarks = [1.0,  2.0,  0.0, 0.0, 1.0;     % x
                   3.0,  2.5   3.4, 1.5, 4.5;     % y
@@ -43,13 +43,13 @@ real_position = [0.8;      % x
                  pi/3.0];  % rotation
              
 cd ../Path' Planning'/
-[real_position desired_end real_landmarks] = create_static_map(2,'X');
+[real_position desired_end real_landmarks] = create_static_map(3,'X');
 cd ../SimpleSLAM-master/
-real_position(3)=pi/2;
+real_position(3)=0;
 
 % The movement command given tot he robot at each timestep                 
 movement_command = [.4;     % Distance
-                    0.0];    % Rotation
+                    -0.001];    % Rotation
                     
 % The Gaussian variance of the movement commands
 movement_variance = [.1;   % Distance
@@ -67,21 +67,19 @@ R = [measurement_variance(1), 0.0, 0.0;
  
 
 
-% Create the particles and initialize them all to be in the same initial
-% position. 
-particles = [];
-num_particles = 50;
-% num_landmarks(1)=0;
-for i = 1:num_particles
-  particles(i).w = 1.0/num_particles;
-  particles(i).position = real_position;
-   for lIdx=1:size(real_landmarks,2)
-%     particles(i).landmarks(lIdx).seen = false;
-%     particles(i).landmarks(lIdx).E=zeros(3,3);
-    particles(i).num_landmarks(1)=0;
-     particles(i).lm_weight=1.0/num_particles;
-   end
-end
+ % Create the particles and initialize them all to be in the same initial
+ % position.
+ particles = [];
+ num_particles = 50;
+ % num_landmarks(1)=0;
+ for i = 1:num_particles
+     particles(i).w = 1.0/num_particles;
+     particles(i).position = real_position;
+     for lIdx=1:size(real_landmarks,2)
+         particles(i).num_landmarks(1)=0;
+         particles(i).lm_weight=1.0/num_particles;
+     end
+ end
 
 pos_history = [];
 default_importance=0.001; 
@@ -219,8 +217,9 @@ for timestep = 2:timesteps
               if (data_associate_vect(j)>0 && j>particles(pIdx).num_landmarks(timestep-1))
                 % If we have never seen this landmark, then we need to initialize it.
                 % We'll just use whatever first reading we recieved.                
-                  particles(pIdx).landmarks(j).pos = [particles(pIdx).position(1) + cos(read_angle(data_associate_vect(j)))*read_distance(data_associate_vect(j));
-                      particles(pIdx).position(2) + sin(read_angle(data_associate_vect(j)))*read_distance(data_associate_vect(j));
+                  particles(pIdx).landmarks(j).pos = [particles(pIdx).position(1) + ...
+                      sin(read_angle(data_associate_vect(j))+particles(pIdx).position(3))*read_distance(data_associate_vect(j));...
+                      particles(pIdx).position(2) + cos(read_angle(data_associate_vect(j))+particles(pIdx).position(3))*read_distance(data_associate_vect(j));
                       0];
           % Initialize the landmark position covariance
                     H(:,:,j)=G(:,:,data_associate_vect(j));
@@ -247,8 +246,11 @@ for timestep = 2:timesteps
 %                   particles(pIdx).landmarks(j).E=particles(pIdx).landmarks(j).E;
                     
                     dist_to_landmark=norm([particles(pIdx).landmarks(j).pos(1)-particles(pIdx).position(1) particles(pIdx).landmarks(j).pos(2)-particles(pIdx).position(2)]);
-                    ang_to_landmark=atan2((particles(pIdx).landmarks(j).pos(2) - particles(pIdx).position(2)),...
-                                (particles(pIdx).landmarks(j).pos(1) - particles(pIdx).position(1)));
+%                     ang_to_landmark=atan2((particles(pIdx).landmarks(j).pos(2) - particles(pIdx).position(2)),...
+%                                 (particles(pIdx).landmarks(j).pos(1) - particles(pIdx).position(1)));
+                    
+                    ang_to_landmark=atan2((particles(pIdx).landmarks(j).pos(1) - particles(pIdx).position(1)),...
+                                (particles(pIdx).landmarks(j).pos(2) - particles(pIdx).position(2)))-particles(pIdx).position(3);
                     if (dist_to_landmark > max_read_distance || ang_to_landmark > max_read_angle || ang_to_landmark < min_read_angle)
                             %counter(pIdx,j)=counter(pIdx,j) %don't change counter
                     else
@@ -302,37 +304,24 @@ for timestep = 2:timesteps
   clf;
   hold on;
 
-  % Plot the landmarks
+  % Plot the real landmarks
   for lIdx=1:size(real_landmarks,2)
-    plot(real_landmarks(1,lIdx), real_landmarks(2,lIdx), 'b*');
+      plot(real_landmarks(1,lIdx), real_landmarks(2,lIdx), 'b*');
   end
-
-%   for lIdx = 1:particles(pIdx).num_landmarks(timestep)
-% %     if(particles(1).landmarks(lIdx).seen)
-%       avg_landmark_guess =[0;0;0];
-%       for pIdx = 1:length(particles)
-%         avg_landmark_guess = avg_landmark_guess + particles(pIdx).landmarks(lIdx).pos;
-%       end
-%       avg_landmark_guess = avg_landmark_guess / length(particles);
-%       plot(avg_landmark_guess(1), avg_landmark_guess(2), 'ko');
-% %     end
-%   end
-
-
-      for pIdx = 1:length(particles)
-        for lIdx=1:particles(pIdx).num_landmarks(timestep)
-            plot(particles(pIdx).landmarks(lIdx).pos(1),particles(pIdx).landmarks(lIdx).pos(2),'b.')
-        end
+  
+  % Plot all particle estimates of landmarks
+  for pIdx = 1:length(particles)
+      for lIdx=1:particles(pIdx).num_landmarks(timestep)
+          plot(particles(pIdx).landmarks(lIdx).pos(1),particles(pIdx).landmarks(lIdx).pos(2),'b.')
       end
-%       avg_landmark_guess = avg_landmark_guess / length(particles);
-%       plot(avg_landmark_guess(1), avg_landmark_guess(2), 'ko');
-%     end
+  end
   
 
   % Plot the particles
   particles_pos = [particles.position];
   plot(particles_pos(1,:), particles_pos(2,:), 'r.');
-
+  axis equal
+  
   % Plot the real robot
   plot(pos_history(1,:), pos_history(2,:), 'r');
   w = .1;
@@ -344,15 +333,32 @@ for timestep = 2:timesteps
                                            'LineWidth',1.5, ...
                                            'MarkerEdgeColor','k', ...
                                            'MarkerFaceColor',[0 1 0], ...
-                                           'MarkerSize',10);
-
+                                           'MarkerSize',5);
+                                       
+  %Make a carrot ^ indicating the orientation of the robot
+  %rot_matrix = [cos(real_position(3)+pi/2)) -sin(real_position(3)+pi/2);sin(real_position(3)+pi/2) cos(real_position(3)+pi/2)];
+  pt1=[real_position(1)-2;real_position(2)];
+  pt2=[real_position(1);real_position(2)+2];
+  pt3=[real_position(1)+2;real_position(2)];
+ 
+  pt1=[real_position(1)+(pt1(1)-real_position(1))*cos(real_position(3))+(pt1(2)-real_position(2))*sin(real_position(3));...
+      real_position(2) - (pt1(1)-real_position(1))*sin(real_position(3)) + (pt1(2)-real_position(2))*cos(real_position(3))];
+  pt2=[real_position(1)+(pt2(1)-real_position(1))*cos(real_position(3))+(pt2(2)-real_position(2))*sin(real_position(3));...
+      real_position(2) - (pt2(1)-real_position(1))*sin(real_position(3)) + (pt2(2)-real_position(2))*cos(real_position(3))]; 
+  pt3=[real_position(1)+(pt3(1)-real_position(1))*cos(real_position(3))+(pt3(2)-real_position(2))*sin(real_position(3));...
+      real_position(2) - (pt3(1)-real_position(1))*sin(real_position(3)) + (pt3(2)-real_position(2))*cos(real_position(3))]; 
+   
+  line([pt1(1) pt2(1)],[pt1(2) pt2(2)]);
+   line([pt2(1) pt3(1)],[pt2(2) pt3(2)]);
+  
+   
   % Show the sensor measurement as an arrow
   for lIdx=1:size(real_landmarks,2)
     real_landmark = real_landmarks(:, lIdx);
 %     if(read_distance(lIdx) < max_read_distance)
         try
-      line([real_position(1), real_position(1)+cos(read_angle(lIdx))*read_distance(lIdx)], ...
-           [real_position(2), real_position(2)+sin(read_angle(lIdx))*read_distance(lIdx)]);
+      line([real_position(1), real_position(1)+sin(read_angle(lIdx)+real_position(3))*read_distance(lIdx)], ...
+           [real_position(2), real_position(2)+cos(read_angle(lIdx)+real_position(3))*read_distance(lIdx)]);
         end
 %         end
   end

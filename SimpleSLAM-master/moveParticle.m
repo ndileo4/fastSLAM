@@ -26,8 +26,8 @@ function newpos = updateMovement(pos, movement, variance)
   rotation = normrnd(movement(2), variance(2)*.25);
 
   delta = zeros(3,1);
-  delta(1,1) = cos(pos(3)+rotation)*speed;
-  delta(2,1) = sin(pos(3)+rotation)*speed;
+  delta(1,1) = sin(pos(3)+rotation)*speed;
+  delta(2,1) = cos(pos(3)+rotation)*speed;
   delta(3,1) = rotation;
 
   newpos = pos+delta;

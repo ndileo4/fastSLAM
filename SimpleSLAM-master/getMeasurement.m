@@ -33,7 +33,7 @@ function [z, H] = getMeasurement(pos, landmark_pos, observation_variance)
   landmark_distance = landmark_distance + normrnd(0, observation_variance(1)*.25);
 
   % Compute the angle from the given pos to the landmark
-  landmark_angle = atan2(vector_to_landmark(2), vector_to_landmark(1));
+  landmark_angle = atan2(vector_to_landmark(1), vector_to_landmark(2))-pos(3);
   landmark_angle = landmark_angle + normrnd(0, observation_variance(2)*.25);
 
 
