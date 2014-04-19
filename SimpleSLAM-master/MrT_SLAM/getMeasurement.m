@@ -33,17 +33,23 @@ function [z, H] = getMeasurement(pos, landmark_pos, observation_variance)
   landmark_distance = landmark_distance + normrnd(0, observation_variance(1)*.25);
 
   % Compute the angle from the given pos to the landmark
-  landmark_angle = atan2(vector_to_landmark(2), vector_to_landmark(1));
+  landmark_angle = atan2(vector_to_landmark(1), vector_to_landmark(2))-pos(3);
   landmark_angle = landmark_angle + normrnd(0, observation_variance(2)*.25);
 
 
   % Compute the Jacobian of this measurement function
   q = landmark_distance^2.0;
-  H = [-(landmark_pos(1) - pos(1))/sqrt(q), -(landmark_pos(2) - pos(2))/sqrt(q), 0.0;
-        (landmark_pos(2) - pos(2))/q,       -(landmark_pos(1) - pos(1))/q,      -1.0;
-        0.0,                                0.0,                               1.0];
+%   H = [-(landmark_pos(1) - pos(1))/sqrt(q), -(landmark_pos(2) - pos(2))/sqrt(q), 0.0;
+%         (landmark_pos(2) - pos(2))/q,       -(landmark_pos(1) - pos(1))/q,      -1.0;
+%         0.0,                                0.0,                               1.0];
+
+  H = [-(landmark_pos(1) - pos(1))/landmark_distance, -(landmark_pos(2) - pos(2))/landmark_distance;
+        (landmark_pos(2) - pos(2))/q,       -(landmark_pos(1) - pos(1))/q];
+
+
+
 
   z = [landmark_distance; 
-       landmark_angle;
-       0];
+       landmark_angle];
+       %0]; remove signifier (not using color data)
 end
