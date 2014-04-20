@@ -41,6 +41,9 @@ data(1:5,6)=0;
 load LANDMARK_DATA
 %[angles distances]
 
+extract = @(C, k) cellfun(@(c)c(k), C) ; %function to extract element out of cell
+
+
 % The maximum distance from which our sensor can sense a landmark
 max_read_distance = 5;
 min_read_distance = 0.3;
@@ -214,7 +217,7 @@ for timestep = 2:timesteps
               elseif (data_associate_vect(j)>0 && j<=particles(pIdx).num_landmarks(timestep-1))
                                                    
                   K = particles(pIdx).landmarks(j).E * H(:,:,j) * inv(Q(:,:,j));
-%                   K = 0.1*K;
+
                   % Mix the ideal reading, and our actual reading using the Kalman gain, and use the result
                   % to predict a new landmark position
                   if pIdx ==50
@@ -294,7 +297,10 @@ for timestep = 2:timesteps
             %this value is dependent on how far away "clusters" are from each other
             [clusters,clusterInds] = clusterData(landmarks_positions,0.3);
             clusterMeans = cellfun(@mean,clusters,'UniformOutput',false);
-            
+            idx_more_than_one=find(cellfun('size',clusters,1)>1); %only include clusters with more than 1 particle
+            avg_lm_position = [extract(clusterMeans(idx_more_than_one,:),1),...
+                                extract(clusterMeans(idx_more_than_one,:),2)]; %this is where we store our "f" value for each node
+
             
             
             
@@ -318,6 +324,9 @@ for timestep = 2:timesteps
           plot(particles(pIdx).landmarks(lIdx).pos(1),particles(pIdx).landmarks(lIdx).pos(2),'b.')
       end
   end
+  
+  % Plot average landmarks position
+  plot (avg_lm_position(:,1),avg_lm_position(:,2),'ro')
   
 
   % Plot the particles
