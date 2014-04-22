@@ -17,7 +17,6 @@
 %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PARAMETERS
@@ -25,6 +24,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all
 close all
+
+last_pos=double.empty(2,0);
+
 % The number of timesteps for the simulation
 timesteps = 350;
 
@@ -71,7 +73,7 @@ M = [movement_variance(1), 0.0;
 %      0.0, 0.0, measurement_variance(3)];
 
 measurement_variance = [0.01;    % Distance
-                        0.14];   % Angle
+                        0.01];   % Angle
 
 R = [measurement_variance(1), 0.0;
      0.0, measurement_variance(2)];
@@ -94,7 +96,7 @@ R = [measurement_variance(1), 0.0;
  end
 avg_robot_position = mean([particles.position],2);
 pos_history = [];
-default_importance=0.000000001; 
+default_importance=0.0000001; 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -149,6 +151,7 @@ for timestep = 2:timesteps
       for pIdx = 1:num_particles               
           
           particles(pIdx).lm_weight=[];
+          clear z_p H Q
           for j=1:particles(pIdx).num_landmarks(timestep-1)
                 
               [z_p(:,j), H(:,:,j)] = getMeasurement(particles(pIdx).position, particles(pIdx).landmarks(j).pos, [0 0]);
@@ -168,7 +171,7 @@ for timestep = 2:timesteps
           end
           
           
-          clear cost_table
+          clear cost_table data_associate_mat data_associate_vect
           
           cost_table(1:size(z_real,2),1:particles(pIdx).num_landmarks(timestep-1))=particles(pIdx).lm_weight;
           cost_table(1:size(z_real,2),particles(pIdx).num_landmarks(timestep-1)+1 ...
@@ -199,6 +202,8 @@ for timestep = 2:timesteps
           end
           data_associate_vect=max(data_associate_mat,[],1); %vector that contains measurement correspondance to landmarks
           
+                             
+          
           i=1;
           for j=1:particles(pIdx).num_landmarks(timestep) %length(data_associate_vect) 
               if (data_associate_vect(j)>0 && j>particles(pIdx).num_landmarks(timestep-1))
@@ -220,13 +225,7 @@ for timestep = 2:timesteps
 
                   % Mix the ideal reading, and our actual reading using the Kalman gain, and use the result
                   % to predict a new landmark position
-                  if pIdx ==50
-                      if j==3
-                          particles(pIdx).landmarks(j).pos
-%                           K
-                          (z_real(:,data_associate_vect(j))-z_p(:,j))
-                      end
-                  end
+
                   
                   particles(pIdx).landmarks(j).pos = particles(pIdx).landmarks(j).pos + K*(z_real(:,data_associate_vect(j))-z_p(:,j));
                                     
@@ -295,14 +294,16 @@ for timestep = 2:timesteps
             %clusters data together to get an estimate of landmark positions
             %the sensitivity value must be tuned to properly separate clusters.
             %this value is dependent on how far away "clusters" are from each other
+            clear avg_lm_position clusterMeans idx_more_than_one
             [clusters,clusterInds] = clusterData(landmarks_positions,0.3);
             clusterMeans = cellfun(@mean,clusters,'UniformOutput',false);
             idx_more_than_one=find(cellfun('size',clusters,1)>1); %only include clusters with more than 1 particle
             avg_lm_position = [extract(clusterMeans(idx_more_than_one,:),1),...
                                 extract(clusterMeans(idx_more_than_one,:),2)]; %this is where we store our "f" value for each node
 
-            
-            
+
+
+                            
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
