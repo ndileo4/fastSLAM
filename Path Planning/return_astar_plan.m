@@ -83,8 +83,8 @@ while isempty(open_list) == 0
         successors{i,1}(3) = q(3)+x_add(i); %set successors x position
         successors{i,1}(4) = q(4)+y_add(i); %set successors y position
                         
-        %check to see if successor is goal
-        if (successors{i,1}(3) == desired_end(1)) && (successors{i,1}(4) == desired_end(2))
+        %check to see if successor is close enough to goal
+        if (abs(successors{i,1}(3) - desired_end(1))<cell_resolution) && (abs(successors{i,1}(4) - desired_end(2))<cell_resolution)
             solution_found = 1; %we got to our goal
             break;
         end

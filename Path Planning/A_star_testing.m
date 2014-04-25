@@ -4,12 +4,13 @@
 clear all
 close all
 
-start_gate = 3; %start gate 1,2, or 3
-end_gate = 'Z'; %desired end gate - X,Y,Z
-cell_resolution = 1.0;
-obstacle_padding = 1.5;
+start_gate = 1; %start gate 1,2, or 3
+end_gate = 'Y'; %desired end gate - X,Y,Z
+cell_resolution = 2.5;
+obstacle_padding = 1.0;
 
 [start_pos desired_end obstacles] = create_static_map(start_gate,end_gate);
+start_pos=[10; 0; 0]; 
 [world_model,mid_points_x, mid_points_y] = populate_grid(obstacles,cell_resolution,obstacle_padding);
 
 % start_pos = [2,4]; %start position x,y
@@ -42,8 +43,8 @@ x_add = [0 cell_resolution cell_resolution cell_resolution...
 y_add = [cell_resolution cell_resolution 0 -cell_resolution ...
                 -cell_resolution -cell_resolution 0 cell_resolution];
 
- dynamic_points = [1 5 1 5 1 5 1 5];   
-% dynamic_points = [1 1 1 1 1 1 1 1]; 
+ %dynamic_points = [1 5 1 5 1 5 1 5];   
+ dynamic_points = [1 1 1 1 1 1 1 1]; 
             
 open_list=cell(1,1); %initialize open_list as a cell structure
 open_list{1,1}(1,1)=-1; %parent x
@@ -77,7 +78,7 @@ while isempty(open_list) == 0
         successors{i,1}(4) = q(4)+y_add(i); %set successors y position
                         
         %check to see if successor is goal
-        if (successors{i,1}(3) == desired_end(1)) && (successors{i,1}(4) == desired_end(2))
+        if (abs(successors{i,1}(3) - desired_end(1))<cell_resolution) && (abs(successors{i,1}(4) - desired_end(2))<cell_resolution)
             solution_found = 1; %we got to our goal
             break;
         end
