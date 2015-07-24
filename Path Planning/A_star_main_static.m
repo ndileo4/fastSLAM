@@ -1,38 +1,21 @@
-% Simple test to attempt to get A star to work with one obstacle
+% Nick DiLeo
+% Villanova University 2014
+
+%INFO: Script to make a static plan - i.e. the robot knows all obstacle a
+%priori
 
 %Create a "grid" of obstacles. 0 for no obstacle. 1 fo obstacle
 clear all
 close all
 
 start_gate = 1; %start gate 1,2, or 3
-end_gate = 'Y'; %desired end gate - X,Y,Z
-cell_resolution = 2.5;
+end_gate = 'Z'; %desired end gate - X,Y,Z
+cell_resolution = 2.0;
 obstacle_padding = 1.0;
 
 [start_pos desired_end obstacles] = create_static_map(start_gate,end_gate);
-start_pos=[10; 0; 0]; 
 [world_model,mid_points_x, mid_points_y] = populate_grid(obstacles,cell_resolution,obstacle_padding);
 
-% start_pos = [2,4]; %start position x,y
-% desired_end = [7, 2]; %desired end position
-
-% obstacles = [0 0 0 0 0 0 0 0 0; %6
-%              0 0 0 0 0 0 0 0 0; %5
-%              0 0 0 0 1 0 0 0 0; %4
-%              0 0 0 0 1 0 0 0 0; %3 
-%              0 0 0 0 1 0 0 0 0; %2
-%              0 0 0 0 0 0 0 0 0; %1
-%              0 0 0 0 0 0 0 0 0]; %0 index
-%            % 0 1 2 3 4 5 6 7 8
-
-% obstacles = [0 0 0 0 0 0 0 0 0; %6
-%              0 0 0 0 1 0 0 0 0; %5
-%              0 0 0 0 1 0 0 0 0; %4
-%              0 0 0 0 0 0 0 0 0; %3 
-%              0 0 0 0 1 0 0 1 0; %2
-%              0 0 0 0 0 1 0 0 0; %1
-%              0 0 0 0 0 0 0 0 0]; %0 index
-%            % 0 1 2 3 4 5 6 7 8
 obstacles = world_model;
         
 grid_cells = cell(size(obstacles));
@@ -43,8 +26,8 @@ x_add = [0 cell_resolution cell_resolution cell_resolution...
 y_add = [cell_resolution cell_resolution 0 -cell_resolution ...
                 -cell_resolution -cell_resolution 0 cell_resolution];
 
- %dynamic_points = [1 5 1 5 1 5 1 5];   
- dynamic_points = [1 1 1 1 1 1 1 1]; 
+ dynamic_points = [1 5 1 5 1 5 1 5];   
+ %dynamic_points = [1 1 1 1 1 1 1 1]; 
             
 open_list=cell(1,1); %initialize open_list as a cell structure
 open_list{1,1}(1,1)=-1; %parent x

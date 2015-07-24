@@ -1,5 +1,5 @@
 There are two main files in this folder:
-1) create_static_map.m
+1) A_star_main_static.m
 Creates one map of the positions of all landmarks,robot's start postion,
 and robot's desired end position.  The start and end positions can be
 changed by supplying the start_gate (1,2, or 3) and end_gate (X,Y, or Z).
@@ -8,7 +8,7 @@ Landmark positions can be changed. At the time of this writing, there are
 size.  It would be good to assume the actual size of each obstacles is
 approximately 1m x 1m
 
-2) create_dynamic_map.m
+2) A_star_main_dynamic.m
 Creates a map that gets updated at each timestep as the robot moves through
 its environment.  Again, you can set start and end positions, but you will
 also have to supply movement commands (velocity and heading) for

@@ -42,7 +42,7 @@ x_add = [0 cell_resolution cell_resolution cell_resolution...
 y_add = [cell_resolution cell_resolution 0 -cell_resolution ...
                 -cell_resolution -cell_resolution 0 cell_resolution];
 
- dynamic_points = [1 5 1 5 1 5 1 5];   
+dynamic_points = [1 5 1 5 1 5 1 5];   
 % dynamic_points = [1 1 1 1 1 1 1 1]; 
 
 %Put our initial point onto the middle of a grid

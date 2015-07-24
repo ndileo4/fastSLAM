@@ -16,8 +16,8 @@ robot_history=double.empty(3,0);
 
 
 %Paramters for A* Search Planner
-cell_resolution = 2.5; %how big (meters) each cell is in our occupancy grid-Square grid cells
-obstacle_padding = 2.0; %how many meters to pad each seen obstacle
+cell_resolution = 2.0; %how big (meters) each cell is in our occupancy grid-Square grid cells
+obstacle_padding = 1.5; %how many meters to pad each seen obstacle
 
 
 %% Set up the obstacle positions, desired start/end postitions
