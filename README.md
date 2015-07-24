@@ -6,7 +6,7 @@ fastSLAM is a particle filter based SLAM implementation.This code is implemented
 In the SimpleSLAM-master directory, there is a simulation with fake data as well as a sub-directory with real robot data.
 
 <p align="center">
-  <img src="fastSLAM_result" alt="Real Data from Robot"/>
+  <img src="fastSLAM_result.png" alt="Real Data from Robot"/>
 </p>
 
 #Path Planner
