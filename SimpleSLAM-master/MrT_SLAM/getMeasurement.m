@@ -30,12 +30,14 @@ function [z, H] = getMeasurement(pos, landmark_pos, observation_variance)
   % to work better when it underestimates the quality of the sensor. 
   vector_to_landmark = [landmark_pos(1) - pos(1); landmark_pos(2) - pos(2)];
   landmark_distance = norm(vector_to_landmark);
-  landmark_distance = landmark_distance + normrnd(0, observation_variance(1)*.25);
+%   landmark_distance = landmark_distance + normrnd(0, observation_variance(1)*.25);
+  landmark_distance = landmark_distance;
+
 
   % Compute the angle from the given pos to the landmark
   landmark_angle = atan2(vector_to_landmark(1), vector_to_landmark(2))-pos(3);
-  landmark_angle = landmark_angle + normrnd(0, observation_variance(2)*.25);
-
+%   landmark_angle = landmark_angle + normrnd(0, observation_variance(2)*.25);
+landmark_angle = landmark_angle;
 
   % Compute the Jacobian of this measurement function
   q = landmark_distance^2.0;
