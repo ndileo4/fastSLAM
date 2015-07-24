@@ -11,4 +11,6 @@ An A* path planner written to avoid obstacles.  This is done with simulated data
 
 Here is a sample output of the dynamic Path Planner
 
-![Dynamc Path Plan](DynamicPathPlan.gif)
+<p align="center">
+  <img src="DynamicPathPlan.gif" alt="Dynamc Path Plan"/>
+</p>
