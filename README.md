@@ -5,6 +5,10 @@ fastSLAM is a particle filter based SLAM implementation.This code is implemented
 
 In the SimpleSLAM-master directory, there is a simulation with fake data as well as a sub-directory with real robot data.
 
+<p align="center">
+  <img src="fastSLAM_result" alt="Real Data from Robot"/>
+</p>
+
 #Path Planner
 
 An A* path planner written to avoid obstacles.  This is done with simulated data and is available in two flavors. One knowing all the obstacles before hand as well as an implementation that moves the simulated robot and sees new obstacles.
